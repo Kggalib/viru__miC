@@ -28,18 +28,24 @@ jobs:
       run: |
         if [ ! -f "server.jar" ]; then
           echo "Downloading Paper MC 1.21.1..."
-          curl -o server.jar https://api.papermc.io/v2/projects/paper/versions/1.21.1/builds/130/downloads/paper-1.21.1-130.jar
+          curl -L -o server.jar https://api.papermc.io/v2/projects/paper/versions/1.21.1/builds/130/downloads/paper-1.21.1-130.jar
         fi
         echo "eula=true" > eula.txt
 
-    - name: Install ViaVersion & Geyser (1.21.10 Bedrock Patch)
+    - name: Install ViaVersion & Geyser (Secure Download)
       run: |
         mkdir -p plugins
-        echo "Downloading ViaVersion and Geyser for Client Compatibility..."
-        # ViaVersion: জাভা প্লেয়ারদের ভার্সন ম্যাচ করার জন্য
-        curl -o plugins/ViaVersion.jar https://repo.viaversion.com/repository/viaversion-releases/com/viaversion/viaversion/5.0.4/viaversion-5.0.4.jar
-        # GeyserMC: এটি আপনার মোবাইলের ১.২১.১০+ ভার্সনের বন্ধুদের সার্ভারে জয়েন করাবে
-        curl -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+        echo "Downloading Plugins cleanly..."
+        
+        # করাপ্ট ফাইল এড়াতে পুরনো নষ্ট ফাইল থাকলে আগে ডিলিট করবে
+        rm -f plugins/ViaVersion.jar plugins/Geyser-Spigot.jar
+        
+        # নতুন করে সম্পূর্ণ ফাইল ডাউনলোড (Follow Redirects)
+        curl -L -o plugins/ViaVersion.jar https://repo.viaversion.com/repository/viaversion-releases/com/viaversion/viaversion/5.0.4/viaversion-5.0.4.jar
+        curl -L -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+        
+        # ডাউনলোড শেষ হওয়ার জন্য একটু অপেক্ষা করা
+        sleep 5
 
     - name: Install and Setup Playit.gg
       env:
@@ -56,7 +62,8 @@ jobs:
 
     - name: Start Minecraft Server (6GB RAM Optimized)
       run: |
-        playit --no-active-check & 
+        # প্লে-ইট রান করার একদম সঠিক ও সেফ লিনাক্স মেথড
+        playit > playit.log 2>&1 & 
         sleep 5
         echo "Starting Minecraft Server..."
         java -Xmx6144M -Xms6144M -jar server.jar nogui
