@@ -1,4 +1,4 @@
-name: GitHub Minecraft Server (Latest Stable Version)
+name: GitHub Minecraft Server (Latest Fixed Version)
 
 on:
   workflow_dispatch:
@@ -17,26 +17,28 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '21' # ১.২২+ লেটেস্ট ভার্সনের জন্য জাভা ২১ দরকার
+        java-version: '21'
 
     - name: Configure Git for Auto-Backup
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-    - name: Download Paper MC Server (Auto Latest Stable)
+    - name: Clean Old Corrupt Server File
       run: |
-        if [ ! -f "server.jar" ]; then
-          echo "Downloading the absolute latest stable Paper MC Server..."
-          # এটি অটোমেটিক পেপারের কারেন্ট লেটেস্ট প্রোডাকশন ভার্সন ডাউনলোড করবে
-          curl -o server.jar https://api.papermc.io/v2/projects/paper/versions/1.22/builds/latest/downloads/paper-1.22-latest.jar || \
-          curl -o server.jar https://api.papermc.io/v2/projects/paper/versions/1.21.4/builds/latest/downloads/paper-1.21.4-latest.jar
-        fi
+        # আগের নষ্ট হয়ে যাওয়া ফাইলটি ডিলিট করে ক্লিন করা হচ্ছে
+        rm -f server.jar
+
+    - name: Download Paper MC Server (Latest API Method)
+      run: |
+        echo "Fetching and downloading latest Paper MC build..."
+        # পেপারের অফিশিয়াল এপিআই থেকে সরাসরি লেটেস্ট স্টেবল বিল্ড নামানো হচ্ছে
+        LATEST_BUILD=$(curl -s https://api.papermc.io/v2/projects/paper/versions/1.21.4 | jq '.builds[-1]')
+        curl -L -o server.jar "https://api.papermc.io/v2/projects/paper/versions/1.21.4/builds/${LATEST_BUILD}/downloads/paper-1.21.4-${LATEST_BUILD}.jar"
         echo "eula=true" > eula.txt
 
     - name: Ensure Plugins Folder Exists
       run: |
-        # আপনার আপলোড করা প্লাগইনগুলো যাতে ডিলিট না হয়, শুধু ফোল্ডার নিশ্চিত করবে
         mkdir -p plugins
 
     - name: Install and Setup Playit.gg
@@ -54,7 +56,6 @@ jobs:
 
     - name: Start Minecraft Server (6GB RAM Optimized)
       run: |
-        # প্লে-ইট রান করার একদম সঠিক মেথড (কোনো এরর আসবে না)
         playit > playit.log 2>&1 & 
         sleep 5
         echo "Starting Minecraft Server..."
