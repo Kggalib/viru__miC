@@ -1,4 +1,4 @@
-name: GitHub Minecraft Server (1.21.1+)
+name: GitHub Minecraft Server (Bedrock 1.21.10+ Support)
 
 on:
   workflow_dispatch:
@@ -17,21 +17,29 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '21' # ১.২১+ এর জন্য জাভা ২১ বাধ্যতামূলক
+        java-version: '21'
 
     - name: Configure Git for Auto-Backup
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-    - name: Download Paper MC Server (1.21.1)
+    - name: Download Paper MC Server (1.21.1 Base)
       run: |
         if [ ! -f "server.jar" ]; then
           echo "Downloading Paper MC 1.21.1..."
-          # এখানে পেপার ১.২১.১ এর অফিশিয়াল স্টেবল বিল্ড দেওয়া হয়েছে
           curl -o server.jar https://api.papermc.io/v2/projects/paper/versions/1.21.1/builds/130/downloads/paper-1.21.1-130.jar
         fi
         echo "eula=true" > eula.txt
+
+    - name: Install ViaVersion & Geyser (1.21.10 Bedrock Patch)
+      run: |
+        mkdir -p plugins
+        echo "Downloading ViaVersion and Geyser for Client Compatibility..."
+        # ViaVersion: জাভা প্লেয়ারদের ভার্সন ম্যাচ করার জন্য
+        curl -o plugins/ViaVersion.jar https://repo.viaversion.com/repository/viaversion-releases/com/viaversion/viaversion/5.0.4/viaversion-5.0.4.jar
+        # GeyserMC: এটি আপনার মোবাইলের ১.২১.১০+ ভার্সনের বন্ধুদের সার্ভারে জয়েন করাবে
+        curl -o plugins/Geyser-Spigot.jar https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
 
     - name: Install and Setup Playit.gg
       env:
@@ -48,9 +56,9 @@ jobs:
 
     - name: Start Minecraft Server (6GB RAM Optimized)
       run: |
-        playit & 
+        playit --no-active-check & 
+        sleep 5
         echo "Starting Minecraft Server..."
-        # ১.২১+ এর জন্য অপ্টিমাইজড ৬ জিবি ফ্ল্যাগস
         java -Xmx6144M -Xms6144M -jar server.jar nogui
 
     - name: Auto-Save and Push World Backup
@@ -58,5 +66,5 @@ jobs:
       run: |
         echo "Saving world and pushing backups..."
         git add .
-        git commit -m "Auto-Backup: World saved after 1.21.1 server shutdown [skip ci]" || echo "No changes"
+        git commit -m "Auto-Backup: World saved after server shutdown [skip ci]" || echo "No changes"
         git push origin main
